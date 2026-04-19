@@ -1040,3 +1040,330 @@ plot_roi_overlap <- function(img_obj1, img_obj2,
 }
 
 
+#' @title Visualize Correlation Scatter Plot
+#'
+#' @description Generates a customizable scatter plot integrated with a fitted linear
+#' regression line, confidence intervals, and correlation statistics (such as R and p-value).
+#' It supports optional grouping for stratified analysis.
+#'
+#' @param data A data.frame containing the variables to be plotted.
+#' @param x_col A character string specifying the column name for the x-axis.
+#' @param y_col A character string specifying the column name for the y-axis.
+#' @param group_col A character string specifying the grouping variable. Default is NULL.
+#' @param point_shape A numeric value defining the shape of the scatter points. Default is 21.
+#' @param point_fill A character string defining the fill color of the points. Default is "#E8B671".
+#' @param point_color A character string defining the border color of the points. Default is "black".
+#' @param point_size A numeric value defining the size of the points. Default is 3.5.
+#' @param point_alpha A numeric value defining the transparency of the points. Default is 0.8.
+#' @param smooth_alpha A numeric value defining the transparency of the confidence interval band. Default is 0.3.
+#' @param smooth_linetype A numeric value defining the line type of the regression line. Default is 2.
+#' @param smooth_size A numeric value defining the width of the regression line. Default is 1.
+#' @param cor_method A character string specifying the correlation coefficient method ("pearson", "kendall", or "spearman"). Default is "spearman".
+#' @param cor_pos A character string specifying the position of the correlation labels ("top_left", "top_right", "bottom_left", "bottom_right"). Default is "top_left".
+#' @param cor_size A numeric value defining the size of the correlation text. Default is 3.
+#' @param x_label A character string for custom x-axis label. If NULL, x_col is used. Default is NULL.
+#' @param y_label A character string for custom y-axis label. If NULL, y_col is used. Default is NULL.
+#' @param title A character string for the plot title. Default is NULL.
+#'
+#' @return A ggplot object representing the correlation scatter plot.
+#'
+#' @importFrom ggplot2 ggplot aes geom_point geom_smooth theme_bw theme element_text element_rect labs
+#' @importFrom ggpubr stat_cor
+#' @export
+#'
+#' @examples
+#' # Generate a dummy dataset
+#' set.seed(123)
+#' data <- data.frame(
+#'   Weight = rnorm(50, mean = 25, sd = 10),
+#'   Mean = rnorm(50, mean = 30, sd = 5)
+#' )
+#'
+#' # Create the correlation scatter plot
+#' viz_cor_scatter(
+#'   data = data,
+#'   x_col = "Weight",
+#'   y_col = "Mean",
+#'   x_label = "Body Weight (g)",
+#'   y_label = "Thermal Metric: Mean",
+#'   title = "Correlation Analysis Example"
+#' )
+viz_cor_scatter <- function(data,
+                            x_col,
+                            y_col,
+                            group_col = NULL,
+                            point_shape = 21,
+                            point_fill = "#E8B671",
+                            point_color = "black",
+                            point_size = 3.5,
+                            point_alpha = 0.8,
+                            smooth_alpha = 0.3,
+                            smooth_linetype = 2,
+                            smooth_size = 1,
+                            cor_method = "spearman",
+                            cor_pos = "top_left",
+                            cor_size = 3,
+                            x_label = NULL,
+                            y_label = NULL,
+                            title = NULL) {
+
+  if (!is.data.frame(data)) {
+    stop("The input parameter 'data' must be a data.frame.")
+  }
+
+  if (!is.character(x_col) || length(x_col) != 1 || !x_col %in% colnames(data)) {
+    stop("The column name specified by 'x_col' does not exist in 'data', or the input is not a single string.")
+  }
+
+  if (!is.character(y_col) || length(y_col) != 1 || !y_col %in% colnames(data)) {
+    stop("The column name specified by 'y_col' does not exist in 'data', or the input is not a single string.")
+  }
+
+  if (!is.null(group_col)) {
+    if (!is.character(group_col) || length(group_col) != 1 || !group_col %in% colnames(data)) {
+      stop("The column name specified by 'group_col' does not exist in 'data', or the input is not a single string.")
+    }
+  }
+
+  pos_config <- switch(cor_pos,
+                       "top_left" = list(x = "left", y = "top"),
+                       "top_right" = list(x = "right", y = "top"),
+                       "bottom_left" = list(x = "left", y = "bottom"),
+                       "bottom_right" = list(x = "right", y = "bottom"),
+                       list(x = "left", y = "top"))
+
+  if (is.null(group_col)) {
+    p <- ggplot(data, aes(x = .data[[x_col]], y = .data[[y_col]])) +
+      geom_smooth(method = "lm", color = point_fill, fill = point_fill,
+                  alpha = smooth_alpha, linetype = smooth_linetype, linewidth = smooth_size) +
+      geom_point(shape = point_shape, fill = point_fill, color = point_color,
+                 size = point_size, alpha = point_alpha) +
+      stat_cor(method = cor_method, size = cor_size,
+               label.x.npc = pos_config$x, label.y.npc = pos_config$y)
+  } else {
+    p <- ggplot(data, aes(x = .data[[x_col]], y = .data[[y_col]],
+                          color = .data[[group_col]], fill = .data[[group_col]])) +
+      geom_smooth(method = "lm", alpha = smooth_alpha, linetype = smooth_linetype, linewidth = smooth_size) +
+      geom_point(shape = point_shape, color = point_color,
+                 size = point_size, alpha = point_alpha) +
+      stat_cor(aes(color = .data[[group_col]]), method = cor_method, size = cor_size, show.legend = FALSE,
+               label.x.npc = pos_config$x, label.y.npc = pos_config$y)
+  }
+
+  final_x_label <- if (is.null(x_label)) x_col else x_label
+  final_y_label <- if (is.null(y_label)) y_col else y_label
+
+  p <- p +
+    theme_bw() +
+    theme(
+      panel.border = element_rect(color = "black", linewidth = 1),
+      plot.title = element_text(size = 16, face = "bold", hjust = 0.5)
+    ) +
+    labs(x = final_x_label, y = final_y_label, title = title)
+
+  return(p)
+}
+
+
+#' @title Visualize Thermal Correlation Heatmap
+#'
+#' @description Generates a publication-ready correlation heatmap from the results
+#' of thermal and external trait correlation analysis. The plot features customizable
+#' color gradients, adjustable significance labels, and a clean, fixed-aspect-ratio
+#' layout suitable for academic reporting.
+#'
+#' @param cor_result A `thermal_correlation_result` object or a `data.frame` containing
+#'   the correlation results. Must contain at least `thermal_var`, `external_var`, and `cor` columns.
+#' @param use_adjusted A logical value indicating whether to use adjusted p-values
+#'   (`p_adj`) for generating significance labels. Defaults to `TRUE`.
+#' @param show_significance A logical value indicating whether to overlay significance
+#'   stars (*, **, ***) on the heatmap tiles. Defaults to `TRUE`.
+#' @param sig_levels A numeric vector of length 3 defining the p-value thresholds
+#'   for *, **, and *** significance labels, respectively. Defaults to `c(0.05, 0.01, 0.001)`.
+#' @param sig_ns_label A character string to display when the correlation is not
+#'   statistically significant. Defaults to `""` (empty string).
+#' @param low A character string specifying the color for strong negative correlations.
+#'   Defaults to `"#346888"` (dark blue).
+#' @param mid A character string specifying the color for zero correlation.
+#'   Defaults to `"#FFFFFF"` (white).
+#' @param high A character string specifying the color for strong positive correlations.
+#'   Defaults to `"#D56B4A"` (dark orange).
+#' @param midpoint A numeric value specifying the midpoint for the color gradient. Defaults to 0.
+#' @param limits A numeric vector of length 2 defining the scale limits of the correlation
+#'   coefficient. Defaults to `c(-1, 1)`.
+#' @param tile_color A character string specifying the border color of the individual tiles.
+#'   Defaults to `"white"`.
+#' @param tile_size A numeric value defining the border thickness of the tiles. Defaults to 0.4.
+#' @param rotate_x A numeric value indicating the rotation angle for the x-axis text labels.
+#'   Defaults to 45.
+#' @param text_size A numeric value specifying the font size of the significance text labels.
+#'   Defaults to 4.
+#' @param na_fill A character string specifying the fill color for missing (NA) correlation
+#'   values. Defaults to `"grey95"`.
+#'
+#' @return A `ggplot` object representing the correlation heatmap.
+#'
+#' @importFrom ggplot2 ggplot aes geom_tile scale_fill_gradient2 scale_x_discrete scale_y_discrete coord_fixed theme_minimal theme element_blank element_line element_text element_rect unit margin geom_text
+#' @export
+#'
+#' @examples
+#' # Generate a dummy dataset representing correlation results
+#' df_res <- data.frame(
+#'    thermal_var = rep(c("Max", "Min"), each = 3),
+#'    external_var = rep(c("Weight", "Glucose", "Survival"), times = 2),
+#'    cor = c(0.85, -0.42, 0.2, -0.96, 0.95, 0.05),
+#'    p_adj = c(0.0005, 0.02, 0.5, 0.008, 0.04, 0.8)
+#'    )
+#'
+#' # Render the heatmap
+#' viz_cor_heatmap(
+#'   cor_result = df_res,
+#'   use_adjusted = TRUE,
+#'   show_significance = TRUE,
+#'   rotate_x = 45
+#' )
+viz_cor_heatmap <- function(
+    cor_result,
+    use_adjusted = TRUE,
+    show_significance = TRUE,
+    sig_levels = c(0.05, 0.01, 0.001),
+    sig_ns_label = "",
+    low = "#346888",
+    mid = "#FFFFFF",
+    high = "#D56B4A",
+    midpoint = 0,
+    limits = c(-1, 1),
+    tile_color = "white",
+    tile_size = 0.4,
+    rotate_x = 45,
+    text_size = 4,
+    na_fill = "grey95"
+) {
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("Package `ggplot2` is required but not installed.", call. = FALSE)
+  }
+
+  if (!is.numeric(sig_levels) || length(sig_levels) != 3) {
+    stop("`sig_levels` must be a numeric vector of length 3.", call. = FALSE)
+  }
+
+  sig_levels <- sort(sig_levels, decreasing = TRUE)
+
+  if (inherits(cor_result, "thermal_correlation_result")) {
+    df <- cor_result$results
+  } else if (is.data.frame(cor_result)) {
+    df <- cor_result
+  } else {
+    stop(
+      "`cor_result` must be either a `thermal_correlation_result` object or a data.frame.",
+      call. = FALSE
+    )
+  }
+
+  required_cols <- c("thermal_var", "external_var", "cor")
+  missing_cols <- setdiff(required_cols, colnames(df))
+  if (length(missing_cols) > 0) {
+    stop(
+      sprintf(
+        "Missing required columns in `cor_result`: %s",
+        paste(missing_cols, collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+
+  p_col <- NULL
+  if (use_adjusted && "p_adj" %in% colnames(df)) {
+    p_col <- "p_adj"
+  } else if ("p" %in% colnames(df)) {
+    p_col <- "p"
+  }
+
+  if (show_significance) {
+    if (!is.null(p_col)) {
+      df$label <- vapply(
+        df[[p_col]],
+        FUN.VALUE = character(1),
+        FUN = function(pv) {
+          if (is.na(pv)) {
+            ""
+          } else if (pv < sig_levels[3]) {
+            "***"
+          } else if (pv < sig_levels[2]) {
+            "**"
+          } else if (pv < sig_levels[1]) {
+            "*"
+          } else {
+            sig_ns_label
+          }
+        }
+      )
+    } else if ("significance" %in% colnames(df)) {
+      df$label <- df$significance
+      df$label[is.na(df$label)] <- ""
+      if (!identical(sig_ns_label, "ns")) {
+        df$label[df$label == "ns"] <- sig_ns_label
+      }
+    } else {
+      df$label <- ""
+    }
+  } else {
+    df$label <- ""
+  }
+
+  thermal_levels <- unique(df$thermal_var)
+  external_levels <- unique(df$external_var)
+
+  df$thermal_var <- factor(df$thermal_var, levels = rev(thermal_levels))
+  df$external_var <- factor(df$external_var, levels = external_levels)
+
+  p <- ggplot2::ggplot(
+    df,
+    ggplot2::aes(x = .data[["external_var"]], y = .data[["thermal_var"]], fill = .data[["cor"]])
+  ) +
+    ggplot2::geom_tile(
+      color = tile_color,
+      linewidth = tile_size
+    ) +
+    ggplot2::scale_fill_gradient2(
+      low = low,
+      mid = mid,
+      high = high,
+      midpoint = midpoint,
+      limits = limits,
+      na.value = na_fill,
+      name = "Correlation"
+    ) +
+    ggplot2::scale_x_discrete(expand = c(0, 0)) +
+    ggplot2::scale_y_discrete(expand = c(0, 0)) +
+    ggplot2::coord_fixed() +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      panel.grid = ggplot2::element_blank(),
+      axis.title = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_line(color = "black", linewidth = 0.5),
+      axis.text.x = ggplot2::element_text(
+        color = "black",
+        angle = rotate_x,
+        hjust = 1,
+        vjust = 1
+      ),
+      axis.text.y = ggplot2::element_text(
+        color = "black",
+        hjust = 1
+      ),
+      panel.border = ggplot2::element_rect(color = "black")
+    )
+
+  if (show_significance) {
+    p <- p +
+      ggplot2::geom_text(
+        ggplot2::aes(label = .data[["label"]]),
+        size = text_size
+      )
+  }
+
+  return(p)
+}
+
+

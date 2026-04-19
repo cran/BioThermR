@@ -17,18 +17,20 @@ A 'BioThermR' object with the \code{stats} slot updated containing a data frame 
 }
 \description{
 Computes a detailed set of summary statistics from the thermal matrix.
-             Metrics include central tendency (Mean, Median, Peak Density), dispersion (SD, IQR, CV),
+             Metrics include ROI size (Pixels), central tendency (Mean, Median, Peak Density), dispersion (SD, IQR, CV),
              and range (Min, Max, Quantiles). NA values (background) are automatically excluded.
 }
 \details{
 The function calculates the following metrics:
          \itemize{
+           \item \strong{Pixels:} Number of valid non-NA pixels included in the analysis.
            \item \strong{Min/Max:} Extremities of the temperature distribution.
            \item \strong{Mean/Median:} Measures of central tendency.
            \item \strong{SD (Standard Deviation):} Absolute measure of spread.
+           \item \strong{Q25/Q75:} The 25th and 75th percentiles of the temperature distribution.
            \item \strong{IQR (Interquartile Range):} Robust measure of spread (Q75 - Q25).
            \item \strong{CV (Coefficient of Variation):} Relative measure of spread (SD / Mean), useful for assessing thermal heterogeneity.
-           \item \strong{Peak_Density:} The temperature value corresponding to the peak of the kernel density estimate (Mode).
+           \item \strong{Peak_Density:} The temperature value corresponding to the peak of the kernel density estimate.
          }
 }
 \examples{

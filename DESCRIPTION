@@ -2,7 +2,7 @@ Package: BioThermR
 Type: Package
 Title: Standardized Processing and Analysis of Thermal Imaging Data in
         Animal Studies
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person(
       "BeiHao", "Li",
@@ -22,13 +22,13 @@ Depends: R (>= 4.1.0)
 License: GPL (>= 3)
 Encoding: UTF-8
 RoxygenNote: 7.3.3
-Imports: EBImage, ggplot2, ggrepel, ggsci, plotly, shiny, stats,
-        Thermimage
-Suggests: knitr, rmarkdown, testthat
+Imports: EBImage, ggplot2, ggpubr, ggrepel, ggsci, plotly, shiny,
+        stats, Thermimage
+Suggests: knitr, rmarkdown, testthat, psych, lme4
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2026-01-16 08:16:14 UTC; libeihao
+Packaged: 2026-04-19 08:50:44 UTC; libeihao
 Author: BeiHao Li [aut, cre]
 Maintainer: BeiHao Li <szright2000@gmail.com>
 Repository: CRAN
-Date/Publication: 2026-01-21 19:40:02 UTC
+Date/Publication: 2026-04-19 09:20:02 UTC
